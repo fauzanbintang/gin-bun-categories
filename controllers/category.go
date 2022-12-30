@@ -1,11 +1,14 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"zamannow/go-rest-api/dto/requests"
 	"zamannow/go-rest-api/dto/responses"
+	"zamannow/go-rest-api/errs"
 	"zamannow/go-rest-api/services"
+	"zamannow/go-rest-api/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -36,12 +39,14 @@ func (ctl *categoryController) Create(ctx *gin.Context) {
 	var src requests.CreateCategoryRequest
 
 	if err := ctl.ParseRequestEntity(ctx, &src); err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	res, err := ctl.categorySrv.Create(ctx, src)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	ctx.JSON(http.StatusCreated, responses.R{
@@ -52,20 +57,23 @@ func (ctl *categoryController) Create(ctx *gin.Context) {
 }
 
 func (ctl *categoryController) Update(ctx *gin.Context) {
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 1<<6)
+	_, err := strconv.ParseInt(ctx.Param("id"), 10, 1<<6)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	var src requests.UpdateCategoryRequest
-	src.ID = id
+	// src.ID = id
 	if err := ctl.ParseRequestEntityUpdate(ctx, &src); err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	res, err := ctl.categorySrv.Update(ctx, src)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, responses.R{
@@ -78,12 +86,14 @@ func (ctl *categoryController) Update(ctx *gin.Context) {
 func (ctl *categoryController) Delete(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 1<<6)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	err = ctl.categorySrv.Delete(ctx, id)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, responses.R{
@@ -95,12 +105,14 @@ func (ctl *categoryController) Delete(ctx *gin.Context) {
 func (ctl *categoryController) FindById(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 1<<6)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	res, err := ctl.categorySrv.FindById(ctx, id)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, responses.R{
@@ -113,7 +125,8 @@ func (ctl *categoryController) FindById(ctx *gin.Context) {
 func (ctl *categoryController) FindAll(ctx *gin.Context) {
 	res, err := ctl.categorySrv.FindAll(ctx)
 	if err != nil {
-		panic(err)
+		errs.Handler(ctx, utils.WrapError(err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, responses.R{
@@ -125,20 +138,23 @@ func (ctl *categoryController) FindAll(ctx *gin.Context) {
 
 func (ctl *categoryController) ParseRequestEntity(ctx *gin.Context, src *requests.CreateCategoryRequest) error {
 	if err := ctx.ShouldBindBodyWith(src, binding.JSON); err != nil {
-		panic(err)
+		return utils.WrapError(errs.DefaultForm(http.StatusBadRequest, err))
 	}
 	if err := ctl.validate.Struct(src); err != nil {
-		panic(err)
+		fmt.Println(err, "error validate")
+		var ve validator.ValidationErrors
+		fmt.Println(ve, "validations errors")
+		return utils.WrapError(errs.DefaultForm(400, err))
 	}
 	return nil
 }
 
 func (ctl *categoryController) ParseRequestEntityUpdate(ctx *gin.Context, src *requests.UpdateCategoryRequest) error {
 	if err := ctx.ShouldBindBodyWith(src, binding.JSON); err != nil {
-		panic(err)
+		return utils.WrapError(errs.DefaultForm(http.StatusBadRequest, err))
 	}
 	if err := ctl.validate.Struct(src); err != nil {
-		panic(err)
+		return utils.WrapError(errs.DefaultForm(400, err))
 	}
 	return nil
 }

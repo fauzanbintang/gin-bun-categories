@@ -8,6 +8,7 @@ import (
 	"zamannow/go-rest-api/domain/repository"
 	"zamannow/go-rest-api/dto/requests"
 	"zamannow/go-rest-api/dto/responses"
+	"zamannow/go-rest-api/utils"
 
 	"github.com/uptrace/bun"
 )
@@ -34,21 +35,23 @@ func (srv *categoryService) Create(ctx context.Context, src requests.CreateCateg
 	c, cancel := repository.NewContext(ctx)
 	defer cancel()
 
-	category := domain.Category{
+	res = domain.Category{
 		Name: src.Name,
 	}
 
 	if err = db.GetConn().RunInTx(c, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) (err error) {
-		if err = srv.categoryRepo.Create(ctx, &tx, &category); err != nil {
-			panic(err)
+		if err = srv.categoryRepo.Create(ctx, &tx, &res); err != nil {
+			err = utils.WrapError(err)
+			return
 		}
 
 		return nil
 	}); err != nil {
-		panic(err)
+		err = utils.WrapError(err)
+		return
 	}
 
-	return category, nil
+	return
 }
 
 func (srv *categoryService) Update(ctx context.Context, src requests.UpdateCategoryRequest) (res responses.CreateCategoryResponse, err error) {
@@ -62,12 +65,14 @@ func (srv *categoryService) Update(ctx context.Context, src requests.UpdateCateg
 
 	if err = db.GetConn().RunInTx(c, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) (err error) {
 		if err = srv.categoryRepo.Update(ctx, &tx, &category); err != nil {
-			panic(err)
+			err = utils.WrapError(err)
+			return
 		}
 
 		return nil
 	}); err != nil {
-		panic(err)
+		err = utils.WrapError(err)
+		return
 	}
 
 	res.ID = category.ID
@@ -86,12 +91,14 @@ func (srv *categoryService) Delete(ctx context.Context, id int64) (err error) {
 
 	if err = db.GetConn().RunInTx(c, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) (err error) {
 		if err = srv.categoryRepo.Delete(ctx, &tx, &category); err != nil {
-			panic(err)
+			err = utils.WrapError(err)
+			return
 		}
 
 		return
 	}); err != nil {
-		panic(err)
+		err = utils.WrapError(err)
+		return
 	}
 
 	return
@@ -105,12 +112,14 @@ func (srv *categoryService) FindById(ctx context.Context, id int64) (res domain.
 
 	if err = db.GetConn().RunInTx(c, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) (err error) {
 		if err = srv.categoryRepo.FindById(ctx, &tx, &res); err != nil {
-			panic(err)
+			err = utils.WrapError(err)
+			return
 		}
 
 		return
 	}); err != nil {
-		panic(err)
+		err = utils.WrapError(err)
+		return
 	}
 
 	return
@@ -122,12 +131,14 @@ func (srv *categoryService) FindAll(ctx context.Context) (res []domain.Category,
 
 	if err = db.GetConn().RunInTx(c, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) (err error) {
 		if err = srv.categoryRepo.FindAll(ctx, &tx, &res); err != nil {
-			panic(err)
+			err = utils.WrapError(err)
+			return
 		}
 
 		return
 	}); err != nil {
-		panic(err)
+		err = utils.WrapError(err)
+		return
 	}
 
 	return
